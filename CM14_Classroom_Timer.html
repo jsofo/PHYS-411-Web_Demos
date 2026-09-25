@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071427">
+  <meta name="description" content="A classroom timer for the CM14 atomic-structure and angular-momentum workshop.">
+  <title>CM14 Classroom Timer</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23071427'/%3E%3Ccircle cx='32' cy='34' r='20' fill='none' stroke='%236ce5e8' stroke-width='6'/%3E%3Cpath d='M32 18v17l10 6M24 7h16' fill='none' stroke='%23fff' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f6f8ff;
+      --muted: #9caec6;
+      --navy: #071427;
+      --panel: rgba(13, 33, 59, 0.82);
+      --line: rgba(163, 190, 222, 0.18);
+      --cyan: #6ce5e8;
+      --cyan-deep: #1fb4c2;
+      --gold: #ffcf64;
+      --danger: #ff7a6f;
+      --success: #71e09a;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { min-height: 100%; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background:
+        radial-gradient(circle at 14% 10%, rgba(31, 180, 194, 0.15), transparent 28rem),
+        radial-gradient(circle at 88% 76%, rgba(255, 207, 100, 0.09), transparent 30rem),
+        var(--navy);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.26;
+      background-image:
+        linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: linear-gradient(to bottom, black, transparent 82%);
+    }
+
+    button, input { font: inherit; }
+
+    button {
+      color: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button:focus-visible {
+      outline: 3px solid var(--gold);
+      outline-offset: 3px;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      width: min(1480px, 100%);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: clamp(18px, 2.5vw, 38px);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: clamp(18px, 2vw, 30px);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .eyebrow {
+      margin: 0 0 5px;
+      color: var(--cyan);
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 920px;
+      font-size: clamp(1.12rem, 2.1vw, 1.72rem);
+      line-height: 1.2;
+      letter-spacing: -.02em;
+    }
+
+    .icon-button {
+      flex: 0 0 auto;
+      width: 48px;
+      height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: rgba(255,255,255,.045);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: border-color .18s ease, background .18s ease, transform .18s ease;
+    }
+
+    .icon-button:hover { border-color: rgba(108,229,232,.55); background: rgba(108,229,232,.09); }
+    .icon-button:active { transform: scale(.96); }
+    .icon-button svg { width: 22px; height: 22px; }
+
+    .workspace {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+      gap: clamp(18px, 2.2vw, 32px);
+    }
+
+    .timer-panel {
+      position: relative;
+      min-height: 565px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: linear-gradient(145deg, rgba(18, 44, 76, .93), rgba(8, 25, 46, .86));
+      box-shadow: var(--shadow);
+      display: grid;
+      place-items: center;
+      padding: clamp(24px, 4vw, 56px);
+    }
+
+    .timer-panel::after {
+      content: "";
+      position: absolute;
+      width: 520px;
+      height: 520px;
+      right: -230px;
+      top: -240px;
+      border: 1px solid rgba(108,229,232,.12);
+      border-radius: 50%;
+      box-shadow: 0 0 0 58px rgba(108,229,232,.025), 0 0 0 116px rgba(108,229,232,.018);
+      pointer-events: none;
+    }
+
+    .timer-content {
+      width: min(100%, 920px);
+      display: grid;
+      justify-items: center;
+      text-align: center;
+    }
+
+    .phase-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: clamp(14px, 2vh, 24px);
+      color: var(--muted);
+      font-size: .84rem;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .phase-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 18px rgba(108,229,232,.8);
+    }
+
+    .phase-title {
+      margin: 0;
+      min-height: 1.1em;
+      font-size: clamp(1.35rem, 3.2vw, 3.15rem);
+      line-height: 1.08;
+      letter-spacing: -.045em;
+      text-wrap: balance;
+    }
+
+    .clock {
+      margin: clamp(18px, 3vh, 34px) 0 clamp(22px, 3.5vh, 40px);
+      font-size: clamp(5.8rem, 15vw, 13.5rem);
+      font-weight: 760;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+      line-height: .82;
+      letter-spacing: -.075em;
+      text-shadow: 0 10px 40px rgba(0,0,0,.25);
+    }
+
+    .clock.warning { color: var(--gold); }
+    .clock.urgent { color: var(--danger); animation: urgentPulse 1s ease-in-out infinite; }
+    .clock.finished { color: var(--success); animation: none; }
+
+    @keyframes urgentPulse { 50% { opacity: .72; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+
+    .primary-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .control {
+      min-height: 54px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255,255,255,.055);
+      padding: 0 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      font-size: .96rem;
+      font-weight: 760;
+      cursor: pointer;
+      transition: transform .18s ease, background .18s ease, border-color .18s ease;
+    }
+
+    .control:hover { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.27); }
+    .control:active { transform: translateY(1px) scale(.985); }
+    .control svg { width: 19px; height: 19px; }
+
+    .control.primary {
+      min-width: 158px;
+      background: var(--cyan);
+      border-color: var(--cyan);
+      color: #03202a;
+      box-shadow: 0 10px 28px rgba(31,180,194,.22);
+    }
+
+    .control.primary:hover { background: #8cf4f2; border-color: #8cf4f2; }
+
+    .mini-controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      color: var(--muted);
+    }
+
+    .mini-button {
+      min-height: 40px;
+      border: 0;
+      border-radius: 11px;
+      padding: 0 12px;
+      background: transparent;
+      color: var(--muted);
+      font-size: .82rem;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .mini-button:hover { color: var(--ink); background: rgba(255,255,255,.06); }
+
+    .side-panel {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .side-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .side-heading h2 { margin: 0; font-size: 1.08rem; }
+    .total-remaining { color: var(--muted); font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    .agenda {
+      position: relative;
+      display: grid;
+      gap: 10px;
+    }
+
+    .phase-button {
+      position: relative;
+      width: 100%;
+      min-height: 92px;
+      overflow: hidden;
+      border: 1px solid transparent;
+      border-radius: 16px;
+      background: rgba(255,255,255,.035);
+      padding: 15px 16px 14px 18px;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .18s ease, background .18s ease, transform .18s ease;
+    }
+
+    .phase-button:hover { background: rgba(255,255,255,.065); transform: translateX(2px); }
+    .phase-button.active { border-color: rgba(108,229,232,.5); background: rgba(108,229,232,.09); }
+    .phase-button.complete { opacity: .62; }
+
+    .phase-progress {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: var(--phase-progress, 0%);
+      height: 3px;
+      background: var(--cyan);
+      box-shadow: 0 0 12px rgba(108,229,232,.75);
+      transition: width .25s linear;
+    }
+
+    .phase-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .phase-number { color: var(--cyan); font-size: .7rem; font-weight: 850; letter-spacing: .11em; text-transform: uppercase; }
+    .phase-minutes { color: var(--muted); font-size: .78rem; font-weight: 700; }
+    .phase-name { display: block; margin-top: 6px; font-size: .94rem; font-weight: 750; line-height: 1.28; }
+
+    .options {
+      margin-top: auto;
+      padding-top: 22px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .toggle-row {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--muted);
+      font-size: .85rem;
+      font-weight: 700;
+    }
+
+    .switch {
+      position: relative;
+      width: 44px;
+      height: 25px;
+      flex: 0 0 auto;
+    }
+
+    .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+    .switch-track { position: absolute; inset: 0; border-radius: 999px; background: #33435b; cursor: pointer; transition: background .2s ease; }
+    .switch-track::after { content: ""; position: absolute; width: 19px; height: 19px; left: 3px; top: 3px; border-radius: 50%; background: white; transition: transform .2s ease; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+    .switch input:checked + .switch-track { background: var(--cyan-deep); }
+    .switch input:checked + .switch-track::after { transform: translateX(19px); }
+    .switch input:focus-visible + .switch-track { outline: 3px solid var(--gold); outline-offset: 3px; }
+
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    .footer strong { color: var(--ink); }
+    .shortcuts { text-align: right; }
+    kbd { padding: 2px 6px; border: 1px solid var(--line); border-bottom-color: rgba(255,255,255,.32); border-radius: 6px; background: rgba(255,255,255,.055); color: var(--ink); font-size: .72rem; }
+
+    .toast {
+      position: fixed;
+      z-index: 10;
+      left: 50%;
+      bottom: 28px;
+      max-width: calc(100vw - 32px);
+      transform: translate(-50%, 30px);
+      padding: 12px 17px;
+      border: 1px solid rgba(108,229,232,.4);
+      border-radius: 12px;
+      background: #102a47;
+      color: var(--ink);
+      box-shadow: var(--shadow);
+      font-size: .88rem;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 900px) {
+      .workspace { grid-template-columns: 1fr; }
+      .timer-panel { min-height: 520px; }
+      .side-panel { padding: 20px; }
+      .agenda { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .options { margin-top: 20px; grid-template-columns: 1fr 1fr; column-gap: 24px; }
+    }
+
+    @media (max-width: 600px) {
+      .app { padding: 16px; }
+      .topbar { align-items: flex-start; }
+      .timer-panel { min-height: 440px; padding: 28px 18px; border-radius: 22px; }
+      .clock { font-size: clamp(5rem, 28vw, 8rem); }
+      .phase-title { font-size: clamp(1.35rem, 7vw, 2rem); }
+      .control { min-height: 50px; padding: 0 14px; }
+      .control.primary { order: -1; flex-basis: 100%; }
+      .agenda { grid-template-columns: 1fr; }
+      .phase-button { min-height: 76px; }
+      .options { grid-template-columns: 1fr; }
+      .footer { align-items: flex-start; flex-direction: column; }
+      .shortcuts { display: none; }
+    }
+
+    @media (max-height: 760px) and (min-width: 901px) {
+      .app { padding-top: 18px; padding-bottom: 18px; gap: 16px; }
+      .timer-panel { min-height: 455px; }
+      .clock { margin: 20px 0 25px; font-size: clamp(5.6rem, 14vw, 10rem); }
+      .phase-button { min-height: 78px; padding-top: 11px; padding-bottom: 11px; }
+      .options { padding-top: 12px; }
+    }
+
+    :fullscreen .app { width: 100%; }
+    :fullscreen .topbar { padding-top: env(safe-area-inset-top); }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">PHYS 411 · CM14 · Friday, September 25</p>
+        <h1>Atomic-structure &amp; angular-momentum workshop</h1>
+      </div>
+      <button class="icon-button" id="fullscreenButton" type="button" aria-label="Enter full screen" title="Full screen (F)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/>
+        </svg>
+      </button>
+    </header>
+
+    <section class="workspace" aria-label="Classroom timer">
+      <section class="timer-panel" aria-labelledby="phaseTitle">
+        <div class="timer-content">
+          <div class="phase-kicker"><span class="phase-dot"></span><span id="phaseKicker">Phase 1 of 4</span></div>
+          <h2 class="phase-title" id="phaseTitle">Retrieval &amp; misconception check</h2>
+          <div class="clock" id="clock" role="timer" aria-live="off" aria-label="10 minutes remaining">10:00</div>
+
+          <div class="primary-controls" aria-label="Timer controls">
+            <button class="control" id="previousButton" type="button" aria-label="Previous phase">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h2v14H7zm3.5 7L19 5v14z"/></svg>
+              Back
+            </button>
+            <button class="control primary" id="playButton" type="button">
+              <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+              <span id="playLabel">Start</span>
+            </button>
+            <button class="control" id="nextButton" type="button" aria-label="Next phase">
+              Next
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M15 5h2v14h-2zM5 5v14l8.5-7z"/></svg>
+            </button>
+          </div>
+
+          <div class="mini-controls" aria-label="Time adjustments">
+            <button class="mini-button" id="minusButton" type="button">−1 min</button>
+            <span aria-hidden="true">·</span>
+            <button class="mini-button" id="resetButton" type="button">Reset phase</button>
+            <span aria-hidden="true">·</span>
+            <button class="mini-button" id="plusButton" type="button">+1 min</button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side-panel" aria-label="Workshop agenda">
+        <div class="side-heading">
+          <h2>Today’s run</h2>
+          <span class="total-remaining" id="totalRemaining">50 min left</span>
+        </div>
+        <div class="agenda" id="agenda"></div>
+
+        <div class="options">
+          <label class="toggle-row">
+            <span>Auto-advance phases</span>
+            <span class="switch">
+              <input id="autoAdvance" type="checkbox" checked>
+              <span class="switch-track" aria-hidden="true"></span>
+            </span>
+          </label>
+          <label class="toggle-row">
+            <span>Play transition chime</span>
+            <span class="switch">
+              <input id="soundEnabled" type="checkbox" checked>
+              <span class="switch-track" aria-hidden="true"></span>
+            </span>
+          </label>
+        </div>
+      </aside>
+    </section>
+
+    <footer class="footer">
+      <span><strong>No new examinable content.</strong> Full class time is protected for consolidation.</span>
+      <span class="shortcuts"><kbd>Space</kbd> start/pause &nbsp; <kbd>←</kbd><kbd>→</kbd> phases &nbsp; <kbd>R</kbd> reset &nbsp; <kbd>F</kbd> full screen</span>
+    </footer>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const phases = [
+        { name: "Retrieval & misconception check", minutes: 10 },
+        { name: "Coached multi-step problem solving", minutes: 25 },
+        { name: "Compare strategies & repair reasoning", minutes: 10 },
+        { name: "Exit check & next-step plan", minutes: 5 }
+      ];
+
+      const els = {
+        agenda: document.getElementById("agenda"),
+        clock: document.getElementById("clock"),
+        phaseKicker: document.getElementById("phaseKicker"),
+        phaseTitle: document.getElementById("phaseTitle"),
+        totalRemaining: document.getElementById("totalRemaining"),
+        playButton: document.getElementById("playButton"),
+        playIcon: document.getElementById("playIcon"),
+        playLabel: document.getElementById("playLabel"),
+        previousButton: document.getElementById("previousButton"),
+        nextButton: document.getElementById("nextButton"),
+        minusButton: document.getElementById("minusButton"),
+        plusButton: document.getElementById("plusButton"),
+        resetButton: document.getElementById("resetButton"),
+        fullscreenButton: document.getElementById("fullscreenButton"),
+        autoAdvance: document.getElementById("autoAdvance"),
+        soundEnabled: document.getElementById("soundEnabled"),
+        toast: document.getElementById("toast")
+      };
+
+      let currentIndex = 0;
+      let remainingMs = phases[0].minutes * 60000;
+      let running = false;
+      let endTime = null;
+      let tickHandle = null;
+      let toastHandle = null;
+      let audioContext = null;
+
+      function phaseDuration(index = currentIndex) {
+        return phases[index].minutes * 60000;
+      }
+
+      function formatTime(ms) {
+        const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+      }
+
+      function totalRemainingMs() {
+        return remainingMs + phases.slice(currentIndex + 1).reduce((sum, phase) => sum + phase.minutes * 60000, 0);
+      }
+
+      function showToast(message) {
+        els.toast.textContent = message;
+        els.toast.classList.add("show");
+        window.clearTimeout(toastHandle);
+        toastHandle = window.setTimeout(() => els.toast.classList.remove("show"), 2200);
+      }
+
+      function savePreferences() {
+        try {
+          localStorage.setItem("cm14-timer-preferences", JSON.stringify({
+            autoAdvance: els.autoAdvance.checked,
+            soundEnabled: els.soundEnabled.checked
+          }));
+        } catch (_) {}
+      }
+
+      function loadPreferences() {
+        try {
+          const saved = JSON.parse(localStorage.getItem("cm14-timer-preferences") || "null");
+          if (saved) {
+            els.autoAdvance.checked = saved.autoAdvance !== false;
+            els.soundEnabled.checked = saved.soundEnabled !== false;
+          }
+        } catch (_) {}
+      }
+
+      function renderAgenda() {
+        els.agenda.replaceChildren();
+        phases.forEach((phase, index) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "phase-button";
+          button.dataset.index = String(index);
+          if (index === currentIndex) button.classList.add("active");
+          if (index < currentIndex) button.classList.add("complete");
+          button.setAttribute("aria-label", `Go to phase ${index + 1}: ${phase.name}, ${phase.minutes} minutes`);
+          button.setAttribute("aria-current", index === currentIndex ? "step" : "false");
+
+          let progress = 0;
+          if (index < currentIndex) progress = 100;
+          if (index === currentIndex) progress = 100 * (1 - remainingMs / phaseDuration(index));
+          progress = Math.max(0, Math.min(100, progress));
+          button.style.setProperty("--phase-progress", `${progress}%`);
+
+          button.innerHTML = `
+            <span class="phase-row">
+              <span class="phase-number">Phase ${index + 1}</span>
+              <span class="phase-minutes">${phase.minutes} min</span>
+            </span>
+            <span class="phase-name">${phase.name}</span>
+            <span class="phase-progress" aria-hidden="true"></span>`;
+          button.addEventListener("click", () => selectPhase(index));
+          els.agenda.appendChild(button);
+        });
+      }
+
+      function updateDisplay() {
+        const phase = phases[currentIndex];
+        const displayTime = formatTime(remainingMs);
+        els.clock.textContent = displayTime;
+        els.clock.setAttribute("aria-label", `${displayTime.replace(":", " minutes ")} seconds remaining`);
+        els.phaseKicker.textContent = `Phase ${currentIndex + 1} of ${phases.length}`;
+        els.phaseTitle.textContent = phase.name;
+
+        const seconds = Math.ceil(remainingMs / 1000);
+        els.clock.classList.toggle("warning", seconds <= 120 && seconds > 30);
+        els.clock.classList.toggle("urgent", seconds <= 30 && seconds > 0);
+        els.clock.classList.toggle("finished", seconds === 0);
+
+        const totalMinutes = Math.ceil(totalRemainingMs() / 60000);
+        els.totalRemaining.textContent = totalMinutes === 0 ? "Session complete" : `${totalMinutes} min left`;
+        els.playLabel.textContent = running ? "Pause" : (remainingMs < phaseDuration() ? "Resume" : "Start");
+        els.playIcon.innerHTML = running
+          ? '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'
+          : '<path d="M8 5v14l11-7z"/>';
+        els.playButton.setAttribute("aria-label", running ? "Pause timer" : "Start timer");
+        renderAgenda();
+        document.title = `${displayTime} · CM14 ${phase.name}`;
+      }
+
+      function stopTicker() {
+        running = false;
+        endTime = null;
+        if (tickHandle !== null) window.clearInterval(tickHandle);
+        tickHandle = null;
+      }
+
+      function playChime(isFinal = false) {
+        if (!els.soundEnabled.checked) return;
+        try {
+          audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+          const now = audioContext.currentTime;
+          const tones = isFinal ? [523.25, 659.25, 783.99] : [659.25, 880];
+          tones.forEach((frequency, index) => {
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            oscillator.type = "sine";
+            oscillator.frequency.value = frequency;
+            gain.gain.setValueAtTime(0, now + index * .18);
+            gain.gain.linearRampToValueAtTime(.18, now + index * .18 + .02);
+            gain.gain.exponentialRampToValueAtTime(.001, now + index * .18 + .42);
+            oscillator.connect(gain).connect(audioContext.destination);
+            oscillator.start(now + index * .18);
+            oscillator.stop(now + index * .18 + .45);
+          });
+        } catch (_) {}
+      }
+
+      function completePhase() {
+        stopTicker();
+        remainingMs = 0;
+        updateDisplay();
+
+        if (currentIndex < phases.length - 1) {
+          playChime(false);
+          if (els.autoAdvance.checked) {
+            const nextName = phases[currentIndex + 1].name;
+            currentIndex += 1;
+            remainingMs = phaseDuration();
+            showToast(`Starting: ${nextName}`);
+            startTimer();
+          } else {
+            showToast("Phase complete — ready for the next phase");
+          }
+        } else {
+          playChime(true);
+          showToast("Workshop complete");
+        }
+      }
+
+      function tick() {
+        if (!running || endTime === null) return;
+        remainingMs = Math.max(0, endTime - Date.now());
+        updateDisplay();
+        if (remainingMs <= 0) completePhase();
+      }
+
+      function startTimer() {
+        if (running) return;
+        if (remainingMs <= 0) {
+          if (currentIndex < phases.length - 1) selectPhase(currentIndex + 1);
+          else return;
+        }
+        running = true;
+        endTime = Date.now() + remainingMs;
+        tickHandle = window.setInterval(tick, 250);
+        updateDisplay();
+      }
+
+      function pauseTimer() {
+        if (!running) return;
+        remainingMs = Math.max(0, endTime - Date.now());
+        stopTicker();
+        updateDisplay();
+      }
+
+      function toggleTimer() {
+        if (running) pauseTimer(); else startTimer();
+      }
+
+      function selectPhase(index, shouldAnnounce = true) {
+        const safeIndex = Math.max(0, Math.min(phases.length - 1, index));
+        stopTicker();
+        currentIndex = safeIndex;
+        remainingMs = phaseDuration();
+        updateDisplay();
+        if (shouldAnnounce) showToast(`Phase ${currentIndex + 1}: ${phases[currentIndex].name}`);
+      }
+
+      function adjustTime(minutes) {
+        const wasRunning = running;
+        if (wasRunning) remainingMs = Math.max(0, endTime - Date.now());
+        remainingMs = Math.max(0, remainingMs + minutes * 60000);
+        if (wasRunning) endTime = Date.now() + remainingMs;
+        updateDisplay();
+        showToast(`${minutes > 0 ? "+" : "−"}${Math.abs(minutes)} minute${Math.abs(minutes) === 1 ? "" : "s"}`);
+      }
+
+      function resetPhase() {
+        stopTicker();
+        remainingMs = phaseDuration();
+        updateDisplay();
+        showToast("Current phase reset");
+      }
+
+      async function toggleFullscreen() {
+        try {
+          if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+          else await document.exitFullscreen();
+        } catch (_) {
+          showToast("Full screen is unavailable in this browser");
+        }
+      }
+
+      function registerWebMCPTools() {
+        const context = document.modelContext;
+        if (!context?.registerTool) return;
+
+        const tools = [
+          {
+            name: "read_classroom_timer",
+            title: "Read classroom timer",
+            description: "Read the active CM14 workshop phase, countdown state, and time remaining.",
+            inputSchema: { type: "object", properties: {}, additionalProperties: false },
+            annotations: { readOnlyHint: true, untrustedContentHint: false },
+            execute: () => ({
+              phase: currentIndex + 1,
+              phaseName: phases[currentIndex].name,
+              remainingSeconds: Math.ceil(remainingMs / 1000),
+              running,
+              autoAdvance: els.autoAdvance.checked
+            })
+          },
+          {
+            name: "set_classroom_timer_state",
+            title: "Start or pause classroom timer",
+            description: "Start or pause the visible CM14 classroom countdown.",
+            inputSchema: {
+              type: "object",
+              properties: { state: { type: "string", enum: ["start", "pause"] } },
+              required: ["state"],
+              additionalProperties: false
+            },
+            annotations: { readOnlyHint: false, untrustedContentHint: false },
+            execute: ({ state }) => {
+              if (state === "start") startTimer();
+              else if (state === "pause") pauseTimer();
+              else throw new Error("State must be start or pause.");
+              return { state: running ? "running" : "paused", remainingSeconds: Math.ceil(remainingMs / 1000) };
+            }
+          },
+          {
+            name: "select_workshop_phase",
+            title: "Select workshop phase",
+            description: "Move the visible timer to one of the four CM14 workshop phases and reset that phase's countdown.",
+            inputSchema: {
+              type: "object",
+              properties: { phase: { type: "integer", minimum: 1, maximum: 4 } },
+              required: ["phase"],
+              additionalProperties: false
+            },
+            annotations: { readOnlyHint: false, untrustedContentHint: false },
+            execute: ({ phase }) => {
+              if (!Number.isInteger(phase) || phase < 1 || phase > 4) throw new Error("Phase must be an integer from 1 to 4.");
+              selectPhase(phase - 1, false);
+              return { phase, phaseName: phases[currentIndex].name, remainingSeconds: Math.ceil(remainingMs / 1000) };
+            }
+          },
+          {
+            name: "adjust_classroom_timer",
+            title: "Adjust classroom timer",
+            description: "Add or remove whole minutes from the visible current-phase countdown.",
+            inputSchema: {
+              type: "object",
+              properties: { minutes: { type: "integer", minimum: -60, maximum: 60 } },
+              required: ["minutes"],
+              additionalProperties: false
+            },
+            annotations: { readOnlyHint: false, untrustedContentHint: false },
+            execute: ({ minutes }) => {
+              if (!Number.isInteger(minutes) || minutes < -60 || minutes > 60) throw new Error("Minutes must be an integer from -60 to 60.");
+              adjustTime(minutes);
+              return { remainingSeconds: Math.ceil(remainingMs / 1000) };
+            }
+          }
+        ];
+
+        tools.forEach(tool => {
+          try { Promise.resolve(context.registerTool(tool)).catch(() => {}); } catch (_) {}
+        });
+      }
+
+      els.playButton.addEventListener("click", toggleTimer);
+      els.previousButton.addEventListener("click", () => selectPhase(currentIndex - 1));
+      els.nextButton.addEventListener("click", () => selectPhase(currentIndex + 1));
+      els.minusButton.addEventListener("click", () => adjustTime(-1));
+      els.plusButton.addEventListener("click", () => adjustTime(1));
+      els.resetButton.addEventListener("click", resetPhase);
+      els.fullscreenButton.addEventListener("click", toggleFullscreen);
+      els.autoAdvance.addEventListener("change", savePreferences);
+      els.soundEnabled.addEventListener("change", savePreferences);
+
+      document.addEventListener("fullscreenchange", () => {
+        const active = Boolean(document.fullscreenElement);
+        els.fullscreenButton.setAttribute("aria-label", active ? "Exit full screen" : "Enter full screen");
+        els.fullscreenButton.title = active ? "Exit full screen (F)" : "Full screen (F)";
+      });
+
+      document.addEventListener("keydown", event => {
+        if (event.target instanceof HTMLInputElement) return;
+        if (event.code === "Space") { event.preventDefault(); toggleTimer(); }
+        if (event.key === "ArrowLeft") selectPhase(currentIndex - 1);
+        if (event.key === "ArrowRight") selectPhase(currentIndex + 1);
+        if (event.key.toLowerCase() === "r") resetPhase();
+        if (event.key.toLowerCase() === "f") toggleFullscreen();
+      });
+
+      loadPreferences();
+      updateDisplay();
+      registerWebMCPTools();
+    })();
+  </script>
+</body>
+</html>
