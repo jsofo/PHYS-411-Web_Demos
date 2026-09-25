@@ -297,12 +297,12 @@
     .phase-button {
       position: relative;
       width: 100%;
-      min-height: 92px;
+      min-height: 68px;
       overflow: hidden;
       border: 1px solid transparent;
       border-radius: 16px;
       background: rgba(255,255,255,.035);
-      padding: 15px 16px 14px 18px;
+      padding: 11px 14px 11px 16px;
       text-align: left;
       cursor: pointer;
       transition: border-color .18s ease, background .18s ease, transform .18s ease;
@@ -326,7 +326,7 @@
     .phase-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
     .phase-number { color: var(--cyan); font-size: .7rem; font-weight: 850; letter-spacing: .11em; text-transform: uppercase; }
     .phase-minutes { color: var(--muted); font-size: .78rem; font-weight: 700; }
-    .phase-name { display: block; margin-top: 6px; font-size: .94rem; font-weight: 750; line-height: 1.28; }
+    .phase-name { display: block; margin-top: 4px; font-size: .88rem; font-weight: 750; line-height: 1.24; }
 
     .options {
       margin-top: auto;
@@ -422,7 +422,7 @@
       .app { padding-top: 18px; padding-bottom: 18px; gap: 16px; }
       .timer-panel { min-height: 455px; }
       .clock { margin: 20px 0 25px; font-size: clamp(5.6rem, 14vw, 10rem); }
-      .phase-button { min-height: 78px; padding-top: 11px; padding-bottom: 11px; }
+      .phase-button { min-height: 62px; padding-top: 9px; padding-bottom: 9px; }
       .options { padding-top: 12px; }
     }
 
@@ -515,10 +515,13 @@
       "use strict";
 
       const phases = [
-        { name: "Retrieval & misconception check", minutes: 10 },
-        { name: "Coached multi-step problem solving", minutes: 25 },
-        { name: "Compare strategies & repair reasoning", minutes: 10 },
-        { name: "Exit check & next-step plan", minutes: 5 }
+        { name: "Retrieval map & misconception vote", minutes: 10 },
+        { name: "Practice A · Scale hierarchy & shell bookkeeping", minutes: 10 },
+        { name: "Practice B · Complete spin–orbit audit", minutes: 6 },
+        { name: "Practice C · Build & diagonalize the fixed-M block", minutes: 8 },
+        { name: "Operator triage & whole-class repair", minutes: 8 },
+        { name: "PS02 strategy clinic", minutes: 5 },
+        { name: "Exit ticket", minutes: 3 }
       ];
 
       const els = {
@@ -798,16 +801,16 @@
           {
             name: "select_workshop_phase",
             title: "Select workshop phase",
-            description: "Move the visible timer to one of the four CM14 workshop phases and reset that phase's countdown.",
+            description: "Move the visible timer to one of the seven CM14 workshop activities and reset that activity's countdown.",
             inputSchema: {
               type: "object",
-              properties: { phase: { type: "integer", minimum: 1, maximum: 4 } },
+              properties: { phase: { type: "integer", minimum: 1, maximum: 7 } },
               required: ["phase"],
               additionalProperties: false
             },
             annotations: { readOnlyHint: false, untrustedContentHint: false },
             execute: ({ phase }) => {
-              if (!Number.isInteger(phase) || phase < 1 || phase > 4) throw new Error("Phase must be an integer from 1 to 4.");
+              if (!Number.isInteger(phase) || phase < 1 || phase > 7) throw new Error("Phase must be an integer from 1 to 7.");
               selectPhase(phase - 1, false);
               return { phase, phaseName: phases[currentIndex].name, remainingSeconds: Math.ceil(remainingMs / 1000) };
             }
