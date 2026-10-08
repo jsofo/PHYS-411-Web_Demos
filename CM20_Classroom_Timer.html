@@ -1,0 +1,1061 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A 50-minute classroom timer for Griffiths and Schroeter WKB Examples 9.1 and 9.2.">
+  <title>CM20 Classroom Timer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07101c;
+      --panel: rgba(13, 27, 45, 0.92);
+      --panel-soft: rgba(22, 40, 62, 0.72);
+      --line: rgba(148, 163, 184, 0.22);
+      --text: #f8fafc;
+      --muted: #a9b7ca;
+      --teal: #31d5c8;
+      --blue: #68a7ff;
+      --amber: #ffc857;
+      --red: #ff7171;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { min-height: 100%; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 8%, rgba(49, 213, 200, 0.13), transparent 28rem),
+        radial-gradient(circle at 88% 14%, rgba(104, 167, 255, 0.13), transparent 30rem),
+        linear-gradient(145deg, #050b13 0%, #091524 46%, #07101c 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow-x: hidden;
+    }
+
+    button, input { font: inherit; }
+
+    button {
+      border: 0;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 3px solid rgba(49, 213, 200, 0.65);
+      outline-offset: 3px;
+    }
+
+    .page {
+      width: min(1500px, 100%);
+      margin: 0 auto;
+      padding: clamp(18px, 2.4vw, 36px);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 24px;
+      margin-bottom: clamp(18px, 2vw, 28px);
+    }
+
+    .eyebrow {
+      margin: 0 0 7px;
+      color: var(--teal);
+      font-size: clamp(0.75rem, 1vw, 0.92rem);
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 900px;
+      font-size: clamp(1.45rem, 2.8vw, 2.65rem);
+      line-height: 1.06;
+      letter-spacing: -0.035em;
+    }
+
+    .icon-button {
+      display: inline-grid;
+      place-items: center;
+      min-width: 48px;
+      min-height: 48px;
+      padding: 11px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
+    }
+
+    .icon-button:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.09);
+      border-color: rgba(148, 163, 184, 0.4);
+    }
+
+    .icon-button svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.75fr) minmax(320px, 0.85fr);
+      gap: clamp(18px, 2vw, 28px);
+      align-items: stretch;
+    }
+
+    .timer-card,
+    .agenda-card {
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .timer-card {
+      position: relative;
+      display: flex;
+      min-height: 650px;
+      padding: clamp(26px, 4vw, 58px);
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .timer-card::after {
+      content: "";
+      position: absolute;
+      right: -140px;
+      bottom: -180px;
+      width: 420px;
+      height: 420px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(49, 213, 200, 0.13), transparent 68%);
+      pointer-events: none;
+    }
+
+    .phase-meta {
+      position: relative;
+      z-index: 1;
+    }
+
+    .phase-kicker {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 13px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .phase-kicker .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--teal);
+      box-shadow: 0 0 18px rgba(49, 213, 200, 0.8);
+    }
+
+    .phase-title {
+      margin: 0;
+      max-width: 850px;
+      font-size: clamp(2rem, 5vw, 4.75rem);
+      line-height: 0.98;
+      letter-spacing: -0.055em;
+    }
+
+    .mastery {
+      display: flex;
+      gap: 10px;
+      max-width: 850px;
+      margin: clamp(18px, 2.6vw, 30px) 0 0;
+      color: #d7e2ef;
+      font-size: clamp(0.98rem, 1.35vw, 1.18rem);
+      line-height: 1.5;
+    }
+
+    .mastery-label {
+      flex: 0 0 auto;
+      color: var(--amber);
+      font-weight: 800;
+    }
+
+    .clock-wrap {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      padding: clamp(22px, 4vh, 48px) 0;
+    }
+
+    .clock {
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(6rem, 15vw, 12.5rem);
+      font-weight: 800;
+      line-height: 0.85;
+      letter-spacing: -0.075em;
+      text-shadow: 0 8px 40px rgba(0, 0, 0, 0.32);
+    }
+
+    .clock.warning { color: var(--amber); }
+    .clock.expired { color: var(--red); }
+
+    .progress-track {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 12px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--teal), var(--blue));
+      transition: width 350ms linear, background 200ms ease;
+    }
+
+    .progress-fill.warning {
+      background: linear-gradient(90deg, #ffb545, var(--amber));
+    }
+
+    .progress-fill.expired { background: var(--red); }
+
+    .controls {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .control {
+      min-height: 58px;
+      padding: 12px 16px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: rgba(255, 255, 255, 0.055);
+      font-weight: 800;
+      transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
+    }
+
+    .control:hover:not(:disabled) {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(148, 163, 184, 0.42);
+    }
+
+    .control.primary {
+      background: var(--teal);
+      color: #05201f;
+      border-color: transparent;
+    }
+
+    .control.primary:hover:not(:disabled) { background: #52e6da; }
+
+    .control:disabled {
+      cursor: not-allowed;
+      opacity: 0.38;
+    }
+
+    .mini-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .mini {
+      min-height: 42px;
+      padding: 9px 13px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .mini:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .agenda-card {
+      display: flex;
+      min-height: 650px;
+      padding: 25px;
+      flex-direction: column;
+    }
+
+    .agenda-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 3px 2px 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .agenda-heading h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      letter-spacing: -0.015em;
+    }
+
+    .total-time {
+      color: var(--muted);
+      font-size: 0.87rem;
+      font-weight: 700;
+    }
+
+    .agenda {
+      display: flex;
+      flex: 1;
+      margin: 0;
+      padding: 13px 0 0;
+      flex-direction: column;
+      list-style: none;
+    }
+
+    .agenda-item {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      min-height: 76px;
+      padding: 11px 10px;
+      border-radius: 15px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+    }
+
+    .agenda-item:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.055);
+      transform: translateX(2px);
+    }
+
+    .agenda-item.active {
+      color: var(--text);
+      background: linear-gradient(90deg, rgba(49, 213, 200, 0.18), rgba(104, 167, 255, 0.07));
+    }
+
+    .agenda-item.complete { color: rgba(169, 183, 202, 0.62); }
+
+    .step-number {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      font-size: 0.8rem;
+      font-weight: 900;
+    }
+
+    .agenda-item.active .step-number {
+      background: var(--teal);
+      border-color: transparent;
+      color: #05201f;
+    }
+
+    .agenda-item.complete .step-number::before {
+      content: "✓";
+      font-size: 1rem;
+    }
+
+    .agenda-item.complete .step-number { font-size: 0; }
+
+    .agenda-copy strong {
+      display: block;
+      color: inherit;
+      font-size: 0.95rem;
+      line-height: 1.23;
+    }
+
+    .agenda-copy small {
+      display: block;
+      margin-top: 5px;
+      color: rgba(169, 183, 202, 0.74);
+      line-height: 1.25;
+    }
+
+    .duration {
+      color: inherit;
+      font-size: 0.83rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .settings {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle input {
+      width: 39px;
+      height: 22px;
+      margin: 0;
+      appearance: none;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.13);
+      cursor: pointer;
+      transition: background 150ms ease;
+    }
+
+    .toggle input::before {
+      content: "";
+      display: block;
+      width: 16px;
+      height: 16px;
+      margin: 3px;
+      border-radius: 50%;
+      background: var(--text);
+      transition: transform 150ms ease;
+    }
+
+    .toggle input:checked { background: var(--teal); }
+    .toggle input:checked::before { transform: translateX(17px); background: #05201f; }
+
+    .footer-note {
+      margin: 18px 0 0;
+      color: rgba(169, 183, 202, 0.7);
+      text-align: center;
+      font-size: 0.82rem;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      z-index: 10;
+      padding: 12px 17px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      color: var(--text);
+      background: rgba(7, 16, 28, 0.94);
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, 16px);
+      transition: opacity 180ms ease, transform 180ms ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    @media (max-width: 970px) {
+      .layout { grid-template-columns: 1fr; }
+      .timer-card, .agenda-card { min-height: auto; }
+      .agenda-item { min-height: 68px; }
+    }
+
+    @media (max-width: 620px) {
+      .page { padding: 15px; }
+      .topbar { gap: 12px; }
+      .timer-card, .agenda-card { border-radius: 21px; }
+      .timer-card { padding: 25px 20px; }
+      .phase-title { font-size: clamp(2rem, 11vw, 3.15rem); }
+      .mastery { display: block; }
+      .mastery-label { display: block; margin-bottom: 4px; }
+      .clock { font-size: clamp(5rem, 26vw, 8rem); }
+      .controls { grid-template-columns: 1fr 1.25fr 1fr; }
+      .control { min-height: 54px; padding: 10px 8px; font-size: 0.9rem; }
+      .agenda-card { padding: 18px; }
+      .agenda-item { grid-template-columns: 40px minmax(0, 1fr) auto; gap: 8px; padding-inline: 7px; }
+      .agenda-copy small { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">PHYS 411 · CM20 · Friday, October 9</p>
+        <h1>Griffiths and Schroeter WKB examples workshop</h1>
+      </div>
+      <button class="icon-button" id="fullscreenButton" type="button" aria-label="Enter fullscreen" title="Fullscreen (F)">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"></path>
+        </svg>
+      </button>
+    </header>
+
+    <section class="layout" aria-label="CM20 workshop timer">
+      <article class="timer-card">
+        <div class="phase-meta">
+          <p class="phase-kicker">
+            <span class="dot" aria-hidden="true"></span>
+          <span id="phaseCounter">Phase 1 of 5</span>
+            <span aria-hidden="true">·</span>
+          <span id="timeRange">0–8 min</span>
+          </p>
+          <h2 class="phase-title" id="phaseTitle">Retrieve the two WKB forms and label the regions</h2>
+          <p class="mastery">
+            <span class="mastery-label">Evidence of mastery</span>
+            <span id="masteryText">Students distinguish oscillatory phase from forbidden-region attenuation and identify where each leading form fails.</span>
+          </p>
+        </div>
+
+        <div class="clock-wrap">
+          <div class="clock" id="clock" role="timer" aria-live="polite" aria-label="8 minutes remaining">08:00</div>
+        </div>
+
+        <div>
+          <div class="progress-track" role="progressbar" aria-label="Current phase progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+
+          <div class="controls" aria-label="Main timer controls">
+            <button class="control" id="previousButton" type="button">Back</button>
+            <button class="control primary" id="startButton" type="button">Start</button>
+            <button class="control" id="nextButton" type="button">Next</button>
+          </div>
+
+          <div class="mini-controls" aria-label="Additional timer controls">
+            <button class="mini" id="minusButton" type="button">− 1 min</button>
+            <button class="mini" id="plusButton" type="button">+ 1 min</button>
+            <button class="mini" id="resetButton" type="button">Reset phase</button>
+            <button class="mini" id="resetWorkshopButton" type="button">Reset workshop</button>
+          </div>
+        </div>
+      </article>
+
+      <aside class="agenda-card">
+        <div class="agenda-heading">
+          <h2>CM20 workshop plan</h2>
+          <span class="total-time" id="workshopTime">50 min left</span>
+        </div>
+        <ol class="agenda" id="agenda"></ol>
+        <div class="settings">
+          <label class="toggle">
+            <input id="autoAdvance" type="checkbox">
+            Auto-advance
+          </label>
+          <label class="toggle">
+            <input id="chimeEnabled" type="checkbox" checked>
+            Chime
+          </label>
+        </div>
+      </aside>
+    </section>
+
+    <p class="footer-note">Space: start/pause · Left/Right: change phase · R: reset phase · F: fullscreen</p>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var phases = [
+        {
+          name: "Retrieve the two WKB forms and label the regions",
+          shortName: "WKB forms and regions",
+          minutes: 8,
+          range: "0–8 min",
+          mastery: "Students distinguish oscillatory phase from forbidden-region attenuation and identify where each leading form fails."
+        },
+        {
+          name: "Example 9.1: hard-wall phase quantization",
+          shortName: "Example 9.1 · hard-wall well",
+          minutes: 16,
+          range: "8–24 min",
+          mastery: "Each pair imposes both wall conditions, derives the phase-integral rule, and recovers the exact flat-bottom spectrum."
+        },
+        {
+          name: "Example 9.2: Gamow alpha-decay tunneling",
+          shortName: "Example 9.2 · alpha decay",
+          minutes: 18,
+          range: "24–42 min",
+          mastery: "Each group finds the outer turning point, builds the Coulomb-barrier action, and explains the exponential lifetime dependence."
+        },
+        {
+          name: "Compare the examples and repair one error",
+          shortName: "Comparison and error clinic",
+          minutes: 5,
+          range: "42–47 min",
+          mastery: "Students contrast a hard-wall phase constraint with a forbidden-region action and repair one boundary, limit, or factor-of-two error."
+        },
+        {
+          name: "Individual exit ticket",
+          shortName: "Exit ticket",
+          minutes: 3,
+          range: "47–50 min",
+          mastery: "Students name the physical constraint that produces each prediction and explain why lower alpha energy means a longer lifetime."
+        }
+      ];
+
+      var state = {
+        index: 0,
+        remaining: phases[0].minutes * 60,
+        originalDuration: phases[0].minutes * 60,
+        running: false,
+        finished: false,
+        lastTick: null,
+        interval: null
+      };
+
+      var elements = {
+        clock: document.getElementById("clock"),
+        phaseCounter: document.getElementById("phaseCounter"),
+        timeRange: document.getElementById("timeRange"),
+        phaseTitle: document.getElementById("phaseTitle"),
+        masteryText: document.getElementById("masteryText"),
+        progressFill: document.getElementById("progressFill"),
+        progressTrack: document.querySelector(".progress-track"),
+        startButton: document.getElementById("startButton"),
+        previousButton: document.getElementById("previousButton"),
+        nextButton: document.getElementById("nextButton"),
+        minusButton: document.getElementById("minusButton"),
+        plusButton: document.getElementById("plusButton"),
+        resetButton: document.getElementById("resetButton"),
+        resetWorkshopButton: document.getElementById("resetWorkshopButton"),
+        fullscreenButton: document.getElementById("fullscreenButton"),
+        autoAdvance: document.getElementById("autoAdvance"),
+        chimeEnabled: document.getElementById("chimeEnabled"),
+        agenda: document.getElementById("agenda"),
+        workshopTime: document.getElementById("workshopTime"),
+        toast: document.getElementById("toast")
+      };
+
+      var preferenceKey = "cm20-timer-preferences";
+      var toastTimer = null;
+
+      function clamp(value, minimum, maximum) {
+        return Math.min(maximum, Math.max(minimum, value));
+      }
+
+      function formatTime(seconds) {
+        var safe = Math.max(0, Math.ceil(seconds));
+        var minutes = Math.floor(safe / 60);
+        var remainder = safe % 60;
+        return String(minutes).padStart(2, "0") + ":" + String(remainder).padStart(2, "0");
+      }
+
+      function phaseDuration(index) {
+        return phases[index].minutes * 60;
+      }
+
+      function totalRemainingMinutes() {
+        var seconds = state.remaining;
+        for (var i = state.index + 1; i < phases.length; i += 1) {
+          seconds += phaseDuration(i);
+        }
+        return Math.ceil(seconds / 60);
+      }
+
+      function buildAgenda() {
+        elements.agenda.innerHTML = "";
+        phases.forEach(function (phase, index) {
+          var item = document.createElement("li");
+          item.className = "agenda-item";
+          item.setAttribute("data-index", String(index));
+          item.setAttribute("tabindex", "0");
+          item.setAttribute("role", "button");
+          item.setAttribute("aria-label", "Open phase " + (index + 1) + ": " + phase.name);
+
+          var number = document.createElement("span");
+          number.className = "step-number";
+          number.textContent = String(index + 1);
+
+          var copy = document.createElement("span");
+          copy.className = "agenda-copy";
+          var name = document.createElement("strong");
+          name.textContent = phase.shortName;
+          var range = document.createElement("small");
+          range.textContent = phase.range;
+          copy.appendChild(name);
+          copy.appendChild(range);
+
+          var duration = document.createElement("span");
+          duration.className = "duration";
+          duration.textContent = phase.minutes + " min";
+
+          item.appendChild(number);
+          item.appendChild(copy);
+          item.appendChild(duration);
+
+          item.addEventListener("click", function () { selectPhase(index); });
+          item.addEventListener("keydown", function (event) {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              selectPhase(index);
+            }
+          });
+          elements.agenda.appendChild(item);
+        });
+      }
+
+      function updateAgenda() {
+        var items = elements.agenda.querySelectorAll(".agenda-item");
+        items.forEach(function (item, index) {
+          item.classList.toggle("active", index === state.index);
+          item.classList.toggle("complete", index < state.index);
+          item.setAttribute("aria-current", index === state.index ? "step" : "false");
+        });
+      }
+
+      function updateDisplay() {
+        var phase = phases[state.index];
+        var displaySeconds = Math.max(0, state.remaining);
+        var elapsed = state.originalDuration - displaySeconds;
+        var progress = state.originalDuration > 0 ? clamp((elapsed / state.originalDuration) * 100, 0, 100) : 100;
+        var warning = displaySeconds > 0 && displaySeconds <= 60;
+        var expired = state.finished || displaySeconds <= 0;
+
+        elements.clock.textContent = formatTime(displaySeconds);
+        elements.clock.setAttribute("aria-label", Math.ceil(displaySeconds / 60) + " minutes remaining");
+        elements.phaseCounter.textContent = "Phase " + (state.index + 1) + " of " + phases.length;
+        elements.timeRange.textContent = phase.range;
+        elements.phaseTitle.textContent = phase.name;
+        elements.masteryText.textContent = phase.mastery;
+        elements.progressFill.style.width = progress + "%";
+        elements.progressTrack.setAttribute("aria-valuenow", String(Math.round(progress)));
+        elements.clock.classList.toggle("warning", warning);
+        elements.clock.classList.toggle("expired", expired);
+        elements.progressFill.classList.toggle("warning", warning);
+        elements.progressFill.classList.toggle("expired", expired);
+        elements.startButton.textContent = state.running ? "Pause" : (state.finished ? "Restart" : "Start");
+        elements.previousButton.disabled = state.index === 0;
+        elements.nextButton.disabled = state.index === phases.length - 1;
+        elements.workshopTime.textContent = totalRemainingMinutes() + " min left";
+        document.title = formatTime(displaySeconds) + " · CM20 · " + phase.shortName;
+        updateAgenda();
+      }
+
+      function stopTimer() {
+        state.running = false;
+        state.lastTick = null;
+        if (state.interval !== null) {
+          window.clearInterval(state.interval);
+          state.interval = null;
+        }
+      }
+
+      function startTimer() {
+        if (state.finished || state.remaining <= 0) {
+          state.remaining = state.originalDuration;
+          state.finished = false;
+        }
+        state.running = true;
+        state.lastTick = performance.now();
+        state.interval = window.setInterval(tick, 200);
+        updateDisplay();
+      }
+
+      function pauseTimer() {
+        tick();
+        stopTimer();
+        updateDisplay();
+      }
+
+      function toggleTimer() {
+        if (state.running) {
+          pauseTimer();
+        } else {
+          startTimer();
+        }
+      }
+
+      function tick() {
+        if (!state.running) return;
+        var now = performance.now();
+        var delta = (now - state.lastTick) / 1000;
+        state.lastTick = now;
+        state.remaining -= delta;
+
+        if (state.remaining <= 0) {
+          state.remaining = 0;
+          state.finished = true;
+          stopTimer();
+          playChime();
+          updateDisplay();
+
+          if (elements.autoAdvance.checked && state.index < phases.length - 1) {
+            window.setTimeout(function () {
+              selectPhase(state.index + 1, true);
+              startTimer();
+            }, 900);
+          } else if (state.index === phases.length - 1) {
+            showToast("Workshop complete");
+          } else {
+            showToast("Phase complete");
+          }
+          return;
+        }
+        updateDisplay();
+      }
+
+      function selectPhase(index, preserveRunning) {
+        var shouldRun = Boolean(preserveRunning) || state.running;
+        stopTimer();
+        state.index = clamp(index, 0, phases.length - 1);
+        state.originalDuration = phaseDuration(state.index);
+        state.remaining = state.originalDuration;
+        state.finished = false;
+        updateDisplay();
+        if (shouldRun) startTimer();
+      }
+
+      function adjustTime(seconds) {
+        state.remaining = Math.max(0, state.remaining + seconds);
+        state.originalDuration = Math.max(state.originalDuration, state.remaining);
+        state.finished = state.remaining <= 0;
+        if (state.finished) stopTimer();
+        updateDisplay();
+      }
+
+      function resetPhase() {
+        stopTimer();
+        state.originalDuration = phaseDuration(state.index);
+        state.remaining = state.originalDuration;
+        state.finished = false;
+        updateDisplay();
+        showToast("Phase reset");
+      }
+
+      function resetWorkshop() {
+        stopTimer();
+        state.index = 0;
+        state.originalDuration = phaseDuration(0);
+        state.remaining = state.originalDuration;
+        state.finished = false;
+        updateDisplay();
+        showToast("Workshop reset");
+      }
+
+      function showToast(message) {
+        elements.toast.textContent = message;
+        elements.toast.classList.add("show");
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(function () {
+          elements.toast.classList.remove("show");
+        }, 1800);
+      }
+
+      function playChime() {
+        if (!elements.chimeEnabled.checked) return;
+        try {
+          var AudioContext = window.AudioContext || window.webkitAudioContext;
+          var context = new AudioContext();
+          var start = context.currentTime;
+          [523.25, 659.25, 783.99].forEach(function (frequency, index) {
+            var oscillator = context.createOscillator();
+            var gain = context.createGain();
+            oscillator.type = "sine";
+            oscillator.frequency.value = frequency;
+            gain.gain.setValueAtTime(0.0001, start + index * 0.13);
+            gain.gain.exponentialRampToValueAtTime(0.13, start + index * 0.13 + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + index * 0.13 + 0.48);
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+            oscillator.start(start + index * 0.13);
+            oscillator.stop(start + index * 0.13 + 0.5);
+          });
+        } catch (error) {
+          showToast("Phase complete");
+        }
+      }
+
+      function savePreferences() {
+        try {
+          localStorage.setItem(preferenceKey, JSON.stringify({
+            autoAdvance: elements.autoAdvance.checked,
+            chimeEnabled: elements.chimeEnabled.checked
+          }));
+        } catch (error) {
+          return;
+        }
+      }
+
+      function loadPreferences() {
+        try {
+          var saved = JSON.parse(localStorage.getItem(preferenceKey) || "{}");
+          elements.autoAdvance.checked = Boolean(saved.autoAdvance);
+          elements.chimeEnabled.checked = saved.chimeEnabled !== false;
+        } catch (error) {
+          elements.chimeEnabled.checked = true;
+        }
+      }
+
+      function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(function () {
+            showToast("Fullscreen is unavailable in this browser");
+          });
+        } else {
+          document.exitFullscreen();
+        }
+      }
+
+      function registerWebMCPTools() {
+        var context = document.modelContext;
+        if (!context || !context.registerTool) return;
+
+        var tools = [
+          {
+            name: "read_classroom_timer",
+            title: "Read classroom timer",
+            description: "Read the active CM20 workshop phase, countdown state, and time remaining.",
+            inputSchema: { type: "object", properties: {}, additionalProperties: false },
+            annotations: { readOnlyHint: true, untrustedContentHint: false },
+            execute: function () {
+              return {
+                phase: state.index + 1,
+                phaseName: phases[state.index].name,
+                remainingSeconds: Math.ceil(state.remaining),
+                running: state.running,
+                autoAdvance: elements.autoAdvance.checked
+              };
+            }
+          },
+          {
+            name: "set_classroom_timer_state",
+            title: "Start or pause classroom timer",
+            description: "Start or pause the visible CM20 classroom countdown.",
+            inputSchema: {
+              type: "object",
+              properties: { state: { type: "string", enum: ["start", "pause"] } },
+              required: ["state"],
+              additionalProperties: false
+            },
+            annotations: { readOnlyHint: false, untrustedContentHint: false },
+            execute: function (input) {
+              if (input.state === "start") startTimer();
+              else if (input.state === "pause") pauseTimer();
+              else throw new Error("State must be start or pause.");
+              return { state: state.running ? "running" : "paused", remainingSeconds: Math.ceil(state.remaining) };
+            }
+          },
+          {
+            name: "select_workshop_phase",
+            title: "Select workshop phase",
+            description: "Move the visible timer to one of the five CM20 workshop activities and reset that activity's countdown.",
+            inputSchema: {
+              type: "object",
+              properties: { phase: { type: "integer", minimum: 1, maximum: 5 } },
+              required: ["phase"],
+              additionalProperties: false
+            },
+            annotations: { readOnlyHint: false, untrustedContentHint: false },
+            execute: function (input) {
+              if (!Number.isInteger(input.phase) || input.phase < 1 || input.phase > 5) throw new Error("Phase must be an integer from 1 to 5.");
+              selectPhase(input.phase - 1);
+              return { phase: input.phase, phaseName: phases[state.index].name, remainingSeconds: Math.ceil(state.remaining) };
+            }
+          },
+          {
+            name: "adjust_classroom_timer",
+            title: "Adjust classroom timer",
+            description: "Add or remove whole minutes from the visible current-phase countdown.",
+            inputSchema: {
+              type: "object",
+              properties: { minutes: { type: "integer", minimum: -60, maximum: 60 } },
+              required: ["minutes"],
+              additionalProperties: false
+            },
+            annotations: { readOnlyHint: false, untrustedContentHint: false },
+            execute: function (input) {
+              if (!Number.isInteger(input.minutes) || input.minutes < -60 || input.minutes > 60) throw new Error("Minutes must be an integer from -60 to 60.");
+              adjustTime(input.minutes * 60);
+              return { remainingSeconds: Math.ceil(state.remaining) };
+            }
+          }
+        ];
+
+        tools.forEach(function (tool) {
+          try { Promise.resolve(context.registerTool(tool)).catch(function () {}); } catch (error) {}
+        });
+      }
+
+      elements.startButton.addEventListener("click", toggleTimer);
+      elements.previousButton.addEventListener("click", function () { selectPhase(state.index - 1); });
+      elements.nextButton.addEventListener("click", function () { selectPhase(state.index + 1); });
+      elements.minusButton.addEventListener("click", function () { adjustTime(-60); });
+      elements.plusButton.addEventListener("click", function () { adjustTime(60); });
+      elements.resetButton.addEventListener("click", resetPhase);
+      elements.resetWorkshopButton.addEventListener("click", resetWorkshop);
+      elements.fullscreenButton.addEventListener("click", toggleFullscreen);
+      elements.autoAdvance.addEventListener("change", savePreferences);
+      elements.chimeEnabled.addEventListener("change", savePreferences);
+
+      document.addEventListener("fullscreenchange", function () {
+        elements.fullscreenButton.setAttribute("aria-label", document.fullscreenElement ? "Exit fullscreen" : "Enter fullscreen");
+      });
+
+      document.addEventListener("keydown", function (event) {
+        if (event.target.matches("input, button")) return;
+        if (event.code === "Space") {
+          event.preventDefault();
+          toggleTimer();
+        } else if (event.key === "ArrowLeft") {
+          selectPhase(state.index - 1);
+        } else if (event.key === "ArrowRight") {
+          selectPhase(state.index + 1);
+        } else if (event.key.toLowerCase() === "r") {
+          resetPhase();
+        } else if (event.key.toLowerCase() === "f") {
+          toggleFullscreen();
+        }
+      });
+
+      buildAgenda();
+      loadPreferences();
+      updateDisplay();
+      registerWebMCPTools();
+    }());
+  </script>
+</body>
+</html>
