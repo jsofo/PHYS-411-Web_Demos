@@ -1,0 +1,622 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Airy Functions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300;1,8..60,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+<script>
+MathJax = {
+  tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] },
+  options: { skipHtmlTags: ['script','noscript','style','textarea','pre'] },
+  startup: { typeset: false }
+};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+
+<style>
+/* Layout: header · equations · interactive chart · asymptotic table */
+:root {
+  --bg:       #F5F4F0;
+  --bg-card:  #FFFFFF;
+  --bg-hi:    #EEF2FB;
+  --fg:       #1B2130;
+  --fg-muted: #576070;
+  --border:   #D8DCE6;
+  --ai:       #1D4ED8;
+  --ai-a:     #6D93F0;
+  --bi:       #B91C1C;
+  --bi-a:     #E87070;
+  --accent:   #7C5C0A;
+  --tag-bg:   #E8EFFF;
+  --tag-fg:   #1D4ED8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:       #0C1521;
+    --bg-card:  #142032;
+    --bg-hi:    #1A2E47;
+    --fg:       #DDE4F0;
+    --fg-muted: #7B90AB;
+    --border:   #253448;
+    --ai:       #5B9BF5;
+    --ai-a:     #93BBF8;
+    --bi:       #F07070;
+    --bi-a:     #F5A3A3;
+    --accent:   #F0B030;
+    --tag-bg:   #1A2E47;
+    --tag-fg:   #5B9BF5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:       #0C1521;
+  --bg-card:  #142032;
+  --bg-hi:    #1A2E47;
+  --fg:       #DDE4F0;
+  --fg-muted: #7B90AB;
+  --border:   #253448;
+  --ai:       #5B9BF5;
+  --ai-a:     #93BBF8;
+  --bi:       #F07070;
+  --bi-a:     #F5A3A3;
+  --accent:   #F0B030;
+  --tag-bg:   #1A2E47;
+  --tag-fg:   #5B9BF5;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  font-size: 1rem;
+  line-height: 1.75;
+  margin: 0;
+  padding-inline: clamp(16px, 4vw, 48px);
+  padding-block: 32px 48px;
+  max-width: 960px;
+  margin-inline: auto;
+}
+
+header { margin-bottom: 28px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+header h1 {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: clamp(1.35rem, 3.5vw, 1.9rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin: 0 0 6px;
+  line-height: 1.2;
+}
+header p {
+  font-size: 0.93rem;
+  color: var(--fg-muted);
+  margin: 0;
+  font-style: italic;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.tag {
+  display: inline-block;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--tag-fg);
+  background: var(--tag-bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-right: 6px;
+}
+
+section { margin-bottom: 32px; }
+
+section h2 {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin: 0 0 14px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+.eq-block {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px 24px;
+  overflow-x: auto;
+}
+.eq-block + .eq-block { margin-top: 10px; }
+
+.eq-label {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--fg-muted);
+  margin-bottom: 6px;
+}
+
+.eq-math {
+  font-size: 1rem;
+  text-align: center;
+  padding: 4px 0;
+}
+
+.prose { max-width: 70ch; }
+.prose p { margin: 0 0 12px; }
+.prose p:last-child { margin-bottom: 0; }
+
+/* Chart container */
+#chart-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  overflow: hidden;
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.82rem;
+}
+.ctrl-label { color: var(--fg-muted); font-size: 0.78rem; align-self: center; }
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+.toggle-btn .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.toggle-btn[data-active="true"] { background: var(--bg-hi); }
+.toggle-btn:hover { background: var(--bg-hi); }
+
+#plotly-chart { width: 100%; height: 420px; }
+
+/* Asymptotic table */
+.asym-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 600px) { .asym-grid { grid-template-columns: 1fr; } }
+
+.asym-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+}
+.asym-card h3 {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-muted);
+  margin: 0 0 12px;
+}
+.asym-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+.asym-row:last-child { margin-bottom: 0; }
+.asym-swatch {
+  width: 3px;
+  min-height: 36px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.asym-body { min-width: 0; font-size: 0.95rem; }
+.asym-fn {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+  margin-bottom: 2px;
+}
+
+/* Validity note */
+.validity {
+  background: var(--bg-hi);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  color: var(--fg-muted);
+  margin-top: 12px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.validity strong { color: var(--accent); }
+
+/* IC table */
+.ic-table {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 480px;
+}
+.ic-table th, .ic-table td {
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  text-align: left;
+}
+.ic-table th {
+  background: var(--bg-hi);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+.ic-table tr:hover td { background: var(--bg-hi); }
+
+.ai-color { color: var(--ai); }
+.bi-color { color: var(--bi); }
+</style>
+
+<header>
+  <h1>Airy Functions as Solutions of the Schrödinger Equation</h1>
+  <p>Exact solutions vs. asymptotic (WKB) approximations &middot; interactive comparison</p>
+</header>
+
+<section>
+  <h2>Physical context</h2>
+  <div class="prose">
+    <p>Consider a quantum particle in a linear potential $V(x) = Fx$ (constant force, e.g. a uniform electric field). The time-independent Schrödinger equation reads</p>
+  </div>
+  <div class="eq-block">
+    <div class="eq-math" id="eq-schrod">
+      $$-\frac{\hbar^2}{2m}\frac{d^2\psi}{dx^2} + Fx\,\psi = E\,\psi$$
+    </div>
+  </div>
+  <div class="prose" style="margin-top:12px;">
+    <p>Defining the dimensionless variable $z = \bigl(\frac{2mF}{\hbar^2}\bigr)^{1/3}\!\bigl(x - \tfrac{E}{F}\bigr)$, the equation reduces exactly to the <em>Airy equation</em>:</p>
+  </div>
+  <div class="eq-block">
+    <div class="eq-math" id="eq-airy">
+      $$\frac{d^2 y}{dz^2} - z\,y = 0$$
+    </div>
+  </div>
+  <div class="prose" style="margin-top:12px;">
+    <p>The two linearly independent solutions are $\operatorname{Ai}(z)$ and $\operatorname{Bi}(z)$.
+    The physically relevant solution for a bound state (e.g. a particle confined by a turning point) is $\operatorname{Ai}(z)$, which decays for $z\to+\infty$ and oscillates for $z\to-\infty$.
+    The function $\operatorname{Bi}(z)$ grows exponentially for $z\to+\infty$ and is excluded by normalisability.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Numerical solutions — exact</h2>
+  <div class="prose" style="margin-bottom:14px;">
+    <p>The solutions are integrated via the Runge–Kutta (RK4) method from $z=0$ using the known initial conditions:</p>
+  </div>
+  <div style="overflow-x:auto;">
+    <table class="ic-table">
+      <thead>
+        <tr><th>Function</th><th>$y(0)$</th><th>$y'(0)$</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="ai-color">Ai$(z)$</td>
+          <td>$3^{-2/3}/\Gamma(\tfrac{2}{3})\approx 0.35503$</td>
+          <td>$-3^{-1/3}/\Gamma(\tfrac{1}{3})\approx -0.25882$</td>
+        </tr>
+        <tr>
+          <td class="bi-color">Bi$(z)$</td>
+          <td>$3^{-1/6}/\Gamma(\tfrac{2}{3})\approx 0.61493$</td>
+          <td>$\phantom{-}3^{+1/6}/\Gamma(\tfrac{1}{3})\approx +0.44829$</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Interactive chart</h2>
+  <div id="chart-wrap">
+    <div class="controls">
+      <span class="ctrl-label">Show:</span>
+      <button class="toggle-btn" id="btn-ai" data-active="true" onclick="toggleTrace('ai')">
+        <span class="dot" style="background:var(--ai)"></span>Ai(<i>z</i>) exact
+      </button>
+      <button class="toggle-btn" id="btn-bi" data-active="true" onclick="toggleTrace('bi')">
+        <span class="dot" style="background:var(--bi)"></span>Bi(<i>z</i>) exact
+      </button>
+      <button class="toggle-btn" id="btn-ai-a" data-active="true" onclick="toggleTrace('ai-a')">
+        <span class="dot" style="background:var(--ai-a)"></span>Ai asymptotic
+      </button>
+      <button class="toggle-btn" id="btn-bi-a" data-active="true" onclick="toggleTrace('bi-a')">
+        <span class="dot" style="background:var(--bi-a)"></span>Bi asymptotic
+      </button>
+    </div>
+    <div id="plotly-chart"></div>
+  </div>
+</section>
+
+<section>
+  <h2>Asymptotic expressions</h2>
+  <div class="asym-grid">
+    <div class="asym-card">
+      <h3>$z \to +\infty$ &nbsp;(classically forbidden)</h3>
+      <div class="asym-row">
+        <div class="asym-swatch" style="background:var(--ai)"></div>
+        <div class="asym-body">
+          <div class="asym-fn ai-color">Ai(<i>z</i>)</div>
+          <div id="asym-ai-pos">$$\operatorname{Ai}(z)\sim\frac{1}{2\sqrt{\pi}}\,z^{-1/4}\,e^{-\zeta}, \quad \zeta=\tfrac{2}{3}z^{3/2}$$</div>
+        </div>
+      </div>
+      <div class="asym-row">
+        <div class="asym-swatch" style="background:var(--bi)"></div>
+        <div class="asym-body">
+          <div class="asym-fn bi-color">Bi(<i>z</i>)</div>
+          <div id="asym-bi-pos">$$\operatorname{Bi}(z)\sim\frac{1}{\sqrt{\pi}}\,z^{-1/4}\,e^{+\zeta}$$</div>
+        </div>
+      </div>
+    </div>
+    <div class="asym-card">
+      <h3>$z \to -\infty$ &nbsp;(classically allowed)</h3>
+      <div class="asym-row">
+        <div class="asym-swatch" style="background:var(--ai)"></div>
+        <div class="asym-body">
+          <div class="asym-fn ai-color">Ai($-t$), &nbsp;$t>0$</div>
+          <div id="asym-ai-neg">$$\operatorname{Ai}(-t)\sim\frac{1}{\sqrt{\pi}}\,t^{-1/4}\cos\!\Bigl(\tfrac{2}{3}t^{3/2}-\tfrac{\pi}{4}\Bigr)$$</div>
+        </div>
+      </div>
+      <div class="asym-row">
+        <div class="asym-swatch" style="background:var(--bi)"></div>
+        <div class="asym-body">
+          <div class="asym-fn bi-color">Bi($-t$), &nbsp;$t>0$</div>
+          <div id="asym-bi-neg">$$\operatorname{Bi}(-t)\sim-\frac{1}{\sqrt{\pi}}\,t^{-1/4}\sin\!\Bigl(\tfrac{2}{3}t^{3/2}-\tfrac{\pi}{4}\Bigr)$$</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="validity">
+    <strong>WKB connection.</strong>
+    For $z\ll -1$ the asymptotic forms are exactly the WKB wavefunctions $\psi\propto |p(x)|^{-1/2}\exp\!\bigl(\pm\tfrac{i}{\hbar}\int|p|\,dx\bigr)$ evaluated near the turning point. The phase $\tfrac{2}{3}t^{3/2}-\tfrac{\pi}{4}$ encodes the Maslov index $\tfrac{\pi}{4}$ per turning point. The Airy function thus provides the uniform approximation that patches the WKB solutions across the classically forbidden region.
+  </div>
+</section>
+
+<script>
+// ─── Airy functions via RK4 ───────────────────────────────────────────────────
+const AI0  =  0.35502805388781724;  // Ai(0)  = 3^{-2/3}/Γ(2/3)
+const AIP0 = -0.25881940379280679;  // Ai'(0) = -3^{-1/3}/Γ(1/3)
+const BI0  =  0.61492662744600074;  // Bi(0)  = 3^{-1/6}/Γ(2/3)
+const BIP0 =  0.44828835735382682;  // Bi'(0) = 3^{1/6}/Γ(1/3)
+
+function rk4(x, y, h) {
+  // Airy ODE: y[0]'=y[1],  y[1]'=x·y[0]
+  const f = (xv, yv) => [yv[1], xv * yv[0]];
+  const k1 = f(x,       y);
+  const k2 = f(x+h/2,  [y[0]+h/2*k1[0], y[1]+h/2*k1[1]]);
+  const k3 = f(x+h/2,  [y[0]+h/2*k2[0], y[1]+h/2*k2[1]]);
+  const k4 = f(x+h,    [y[0]+h*k3[0],   y[1]+h*k3[1]]);
+  return [
+    y[0] + h*(k1[0]+2*k2[0]+2*k3[0]+k4[0])/6,
+    y[1] + h*(k1[1]+2*k2[1]+2*k3[1]+k4[1])/6
+  ];
+}
+
+function computeAiry(xMin, xMax, h) {
+  const ptsFwd = { x:[0], ai:[AI0], bi:[BI0] };
+  let yA=[AI0,AIP0], yB=[BI0,BIP0], x=0;
+  while (x < xMax - h/2) {
+    yA = rk4(x, yA, h);
+    yB = rk4(x, yB, h);
+    x += h;
+    ptsFwd.x.push(x);
+    ptsFwd.ai.push(yA[0]);
+    ptsFwd.bi.push(yB[0]);
+  }
+  const ptsBwd = { x:[], ai:[], bi:[] };
+  yA=[AI0,AIP0]; yB=[BI0,BIP0]; x=0;
+  while (x > xMin + h/2) {
+    yA = rk4(x, yA, -h);
+    yB = rk4(x, yB, -h);
+    x -= h;
+    ptsBwd.x.unshift(x);
+    ptsBwd.ai.unshift(yA[0]);
+    ptsBwd.bi.unshift(yB[0]);
+  }
+  return {
+    x:  [...ptsBwd.x,  ...ptsFwd.x.slice(1)],
+    ai: [...ptsBwd.ai, ...ptsFwd.ai.slice(1)],
+    bi: [...ptsBwd.bi, ...ptsFwd.bi.slice(1)]
+  };
+}
+
+// ─── Asymptotic formulas ──────────────────────────────────────────────────────
+function asymPos(z) {
+  if (z <= 0) return { ai: null, bi: null };
+  const zeta = 2/3 * Math.pow(z, 1.5);
+  const fac  = 1 / (Math.sqrt(Math.PI) * Math.pow(z, 0.25));
+  return { ai: fac/2 * Math.exp(-zeta),
+           bi: fac   * Math.exp(+zeta) };
+}
+function asymNeg(z) {
+  if (z >= 0) return { ai: null, bi: null };
+  const t    = -z;
+  const zeta = 2/3 * Math.pow(t, 1.5);
+  const fac  = 1 / (Math.sqrt(Math.PI) * Math.pow(t, 0.25));
+  return { ai:  fac * Math.cos(zeta - Math.PI/4),
+           bi: -fac * Math.sin(zeta - Math.PI/4) };
+}
+
+// ─── Build data ───────────────────────────────────────────────────────────────
+const xMin = -9, xMax = 5, hStep = 0.005;
+const exact = computeAiry(xMin, xMax, hStep);
+
+// Asymptotic: use finer grid to capture oscillations
+const asymX_neg=[], asymAi_neg=[], asymBi_neg=[];
+const asymX_pos=[], asymAi_pos=[], asymBi_pos=[];
+
+for (let z = xMin; z <= -0.2; z += 0.01) {
+  const a = asymNeg(z);
+  asymX_neg.push(z);
+  asymAi_neg.push(a.ai);
+  asymBi_neg.push(a.bi);
+}
+for (let z = 0.2; z <= xMax; z += 0.01) {
+  const a = asymPos(z);
+  asymX_pos.push(z);
+  // cap Bi to avoid visual overflow (it grows as e^{2/3 z^{3/2}})
+  asymAi_pos.push(a.ai);
+  asymBi_pos.push(Math.min(a.bi, 2.0));
+}
+
+// ─── Plotly theme helpers ─────────────────────────────────────────────────────
+function getCSSVar(v) {
+  return getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+}
+function getTheme() {
+  const root = document.documentElement;
+  const dt = root.getAttribute('data-theme');
+  if (dt === 'dark') return 'dark';
+  if (dt === 'light') return 'light';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+function plotlyLayout() {
+  const dark = getTheme() === 'dark';
+  const bg0  = getCSSVar('--bg-card');
+  const bg1  = getCSSVar('--bg');
+  const fg   = getCSSVar('--fg');
+  const fgm  = getCSSVar('--fg-muted');
+  const brd  = getCSSVar('--border');
+  return {
+    paper_bgcolor: bg0, plot_bgcolor: bg1,
+    font: { family: "'Inter', system-ui, sans-serif", color: fg, size: 12 },
+    margin: { l:50, r:20, t:20, b:50 },
+    xaxis: {
+      title: { text: 'z', font:{size:13,color:fg} },
+      range: [xMin, xMax],
+      gridcolor: brd, zerolinecolor: fgm, zerolinewidth:1.5,
+      tickcolor: fgm, linecolor: brd,
+    },
+    yaxis: {
+      title: { text: 'y(z)', font:{size:13,color:fg} },
+      range: [-1.4, 1.6],
+      gridcolor: brd, zerolinecolor: fgm, zerolinewidth:1,
+      tickcolor: fgm, linecolor: brd,
+    },
+    showlegend: true,
+    legend: {
+      x:0.01, y:0.99, xanchor:'left', yanchor:'top',
+      bgcolor: dark ? 'rgba(20,32,50,0.85)' : 'rgba(255,255,255,0.85)',
+      bordercolor: brd, borderwidth:1,
+      font:{ size:11, color: fg }
+    },
+    // Vertical line at z=0 (turning point)
+    shapes: [{
+      type:'line', x0:0, x1:0, y0:-1.4, y1:1.6,
+      line:{ color: dark?'#3A6090':'#8BA3CC', width:1, dash:'dot' }
+    }],
+    annotations: [{
+      x:0.04, y:1.52, xref:'x', yref:'y',
+      text:'turning point', showarrow:false,
+      font:{ size:10, color: dark?'#7B90AB':'#576070' },
+      xanchor:'left'
+    }]
+  };
+}
+
+// ─── Trace definitions ────────────────────────────────────────────────────────
+const traces = [
+  // Exact Ai
+  { key:'ai', x: exact.x, y: exact.ai,
+    mode:'lines', name:'Ai(z) — exact',
+    line:{ color:getCSSVar('--ai'), width:2.5 } },
+  // Exact Bi (clip for display)
+  { key:'bi', x: exact.x, y: exact.bi.map(v=>isFinite(v)&&Math.abs(v)<2?v:null),
+    mode:'lines', name:'Bi(z) — exact',
+    line:{ color:getCSSVar('--bi'), width:2.5 },
+    connectgaps: false },
+  // Ai asymptotic (negative side)
+  { key:'ai-a', x: asymX_neg, y: asymAi_neg,
+    mode:'lines', name:'Ai asymptotic (z<0)',
+    line:{ color:getCSSVar('--ai-a'), width:1.5, dash:'dot' } },
+  // Ai asymptotic (positive side)
+  { key:'ai-a', x: asymX_pos, y: asymAi_pos,
+    mode:'lines', showlegend:false,
+    line:{ color:getCSSVar('--ai-a'), width:1.5, dash:'dot' } },
+  // Bi asymptotic (negative side)
+  { key:'bi-a', x: asymX_neg, y: asymBi_neg,
+    mode:'lines', name:'Bi asymptotic (z<0)',
+    line:{ color:getCSSVar('--bi-a'), width:1.5, dash:'dot' } },
+  // Bi asymptotic (positive side) — only Bi (grows, so cap display)
+  { key:'bi-a', x: asymX_pos, y: asymBi_pos,
+    mode:'lines', showlegend:false,
+    line:{ color:getCSSVar('--bi-a'), width:1.5, dash:'dot' },
+    connectgaps: false }
+];
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+const chartEl = document.getElementById('plotly-chart');
+const config  = { responsive:true, displayModeBar:true,
+                  modeBarButtonsToRemove:['select2d','lasso2d'],
+                  displaylogo:false };
+
+Plotly.newPlot(chartEl, traces, plotlyLayout(), config);
+
+// ─── Toggle buttons ───────────────────────────────────────────────────────────
+const visibility = { ai:true, bi:true, 'ai-a':true, 'bi-a':true };
+
+function toggleTrace(key) {
+  visibility[key] = !visibility[key];
+  const update = { visible: traces.map(t => {
+    const v = visibility[t.key];
+    return v ? true : 'legendonly';
+  })};
+  Plotly.restyle(chartEl, update);
+  document.getElementById('btn-'+key).setAttribute('data-active', visibility[key]);
+}
+
+// ─── Re-render on theme change ────────────────────────────────────────────────
+const themeObserver = new MutationObserver(() => {
+  Plotly.relayout(chartEl, plotlyLayout());
+  // update trace colours
+  const aiColor  = getCSSVar('--ai');
+  const biColor  = getCSSVar('--bi');
+  const aiAColor = getCSSVar('--ai-a');
+  const biAColor = getCSSVar('--bi-a');
+  Plotly.restyle(chartEl, 'line.color',
+    [aiColor, biColor, aiAColor, aiAColor, biAColor, biAColor]);
+});
+themeObserver.observe(document.documentElement, { attributes:true, attributeFilter:['data-theme'] });
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+  Plotly.relayout(chartEl, plotlyLayout());
+});
+
+// ─── Resize ───────────────────────────────────────────────────────────────────
+window.addEventListener('resize', () => Plotly.Plots.resize(chartEl));
+
+// ─── MathJax ─────────────────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  if (window.MathJax?.typesetPromise) MathJax.typesetPromise();
+});
+</script>
+
+</body></html>
